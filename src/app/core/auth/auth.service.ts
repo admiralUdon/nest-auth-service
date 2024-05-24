@@ -11,6 +11,8 @@
 import { Injectable } from '@nestjs/common';
 import { LogService } from 'app/core/providers/log/log.service';
 import { IProfile } from 'passport-azure-ad';
+import { MailService } from 'app/core/providers/mail/mail.service';
+import { readHTMLFile } from 'app/core/utils/html-reader.util';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +22,7 @@ export class AuthService {
      */
 
     constructor(
+        private _mailService: MailService,
         private _logService: LogService
     ) {
         this._logService.registerClassName(AuthService.name)
@@ -74,11 +77,16 @@ export class AuthService {
         }
     }
 
+    private readonly resetPasswordMail = readHTMLFile('reset-email.html');
     forgotPassword(username: string): void
     {
+        console.log("resetPasswordMail", this.resetPasswordMail);
+        
         /**
          * TODO: Check DB for real user
          */
+
+        this._mailService.sendMail(username, "Test", this.resetPasswordMail)
     }
 
     resetPassword(username: string, password: string): void

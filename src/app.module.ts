@@ -5,6 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { appRoutes } from 'app.routes';
 import { throttlerConfig } from 'app/config/throttler.config';
 import { AuthServiceModule } from 'app/core/auth/auth.module';
+import { MailServiceModule } from 'app/core/providers/mail/mail.module';
 import { SessionServiceModule } from 'app/core/providers/session/session.module';
 import { AuthModule } from 'app/modules/auth/auth.module';
 import { HelloModule } from 'app/modules/hello/hello.module';
@@ -17,6 +18,7 @@ import { UserModule } from 'app/modules/user/user.module';
         ThrottlerModule.forRoot(throttlerConfig),
         AuthServiceModule,
         SessionServiceModule,
+        MailServiceModule,
         // Custom modules
         HelloModule,
         AuthModule,
