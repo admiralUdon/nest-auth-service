@@ -79,14 +79,15 @@ export class AuthService {
 
     private readonly resetPasswordMail = readHTMLFile('reset-email.html');
     forgotPassword(username: string): void
-    {
-        console.log("resetPasswordMail", this.resetPasswordMail);
-        
+    {        
         /**
-         * TODO: Check DB for real user
+         * TODO: 
+         * - Check DB for real user
+         * - Make a placeholder injection
+         * - Cache request to avoid spam (use redis provider)
          */
 
-        this._mailService.sendMail(username, "Test", this.resetPasswordMail)
+        this._mailService.sendMail(username, "Reset your password", this.resetPasswordMail)
     }
 
     resetPassword(username: string, password: string): void

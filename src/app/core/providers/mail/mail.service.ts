@@ -10,14 +10,14 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { transportConfig } from 'app/config/mail.config';
-import * as nodemailer from 'nodemailer';
+import { SendMailOptions, Transporter, createTransport } from 'nodemailer';
 
 @Injectable()
 export class MailService {
 
     private readonly logger = new Logger(MailService.name);
-    private transporter: nodemailer.Transporter;
-    private transporterOptions;
+    private transporter: Transporter;
+    private transporterOptions: any;
 
     /**
      * Constructor
@@ -32,14 +32,17 @@ export class MailService {
     // @ Public methods
     // -----------------------------------------------------------------------------------------------------
 
-    async sendMail(to: string, subject: string, text: string) {
-        const mailOptions = {
-            from: this.transporterOptions.user,
+    async sendMail(to: string, subject: string, html: string) {
+        const from = this.transporterOptions.auth.user;
+        const mailOptions: SendMailOptions = {
+            from,
             to,
             subject,
-            text,
+            html,
         };
-    
+
+        this.logger.debug("mailOptions", mailOptions);
+        
         await this.transporter.sendMail(mailOptions);
     }
 
@@ -50,7 +53,7 @@ export class MailService {
     private async initialiseTransport() {
         try {
             this.transporterOptions = transportConfig();
-            this.transporter = nodemailer.createTransport(this.transporterOptions);
+            this.transporter = createTransport(this.transporterOptions);
             this.logger.debug(`SMTP connection transport successfully initialized`);
         } catch (error) {
             this.logger.error(`Failed to initialize SMTP connection transport: ${error}`);

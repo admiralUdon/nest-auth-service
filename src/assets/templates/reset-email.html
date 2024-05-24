@@ -3,17 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #333333;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+        .header img {
+            display: block;
+            margin: 0 auto;
+        }
+        .content {
+            padding: 20px;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .content p {
+            margin: 0 0 15px;
+        }
+        .content a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        .content a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            color: #666666;
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid #dddddd;
+        }
+        .footer p {
+            margin: 0 0 10px;
+        }
+    </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Your Custom Heading</h1>
-    </div>
-    <div class="content">
-        <p>Your email content goes here.</p>
-        <img class="w-96" src="https://www.shutterstock.com/image-photo/word-demo-appearing-behind-torn-260nw-1782295403.jpg" alt="Image Description" class="w-full">
-    </div>
-    <div class="footer">
-        <p>Your custom footer content.</p>
+    <div class="container">
+        <div class="header">
+            <img width="150" src="https://www.teras.dev/assets/images/logo/TERAS-white.png" alt="TERAS Logo">
+        </div>
+        <div class="content">
+            <p>Hi __USERNAME__,</p>
+            <p>You recently asked to reset your TERAS account password.</p> 
+            <p><a href="__PASSWORD_RESET_LINK__">Click here to change your password.</a></p>
+            <br>
+            <p>Thanks,</p>
+            <p>Support Team</p>
+        </div>
+        <div class="footer">
+            <p>Didn't request this change?</p>
+            <p>If you didn't request for a password reset, <a href="__SUPPORT_LINK__">let us know immediately.</a></p>
+        </div>
     </div>
 </body>
 </html>
