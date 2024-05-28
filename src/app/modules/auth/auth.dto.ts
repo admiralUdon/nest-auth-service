@@ -9,6 +9,10 @@ export class ForgotPasswordBody {
 }
 
 export class ResetPasswordBody {
+    @ApiProperty({example: "token", required: true})
+    @IsNotEmpty()
+    token: string;
+
     @ApiProperty({example: "password", required: true})
     @IsNotEmpty()
     password: string;

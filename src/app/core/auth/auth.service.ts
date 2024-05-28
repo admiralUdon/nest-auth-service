@@ -6,10 +6,9 @@
  * Last Contributor : Ahmad Miqdaad (ahmadmiqdaadz[at]gmail.com)
  * Last Updated     : 12 May 2024
  * 
- * **/
+ **/
 
-import { Injectable } from '@nestjs/common';
-import { LogService } from 'app/core/providers/log/log.service';
+import { Injectable, Logger } from '@nestjs/common';
 import { IProfile } from 'passport-azure-ad';
 import { MailService } from 'app/core/providers/mail/mail.service';
 import { readHTMLFile } from 'app/core/utils/html-reader.util';
@@ -17,15 +16,15 @@ import { readHTMLFile } from 'app/core/utils/html-reader.util';
 @Injectable()
 export class AuthService {
 
+    private readonly logger = new Logger(AuthService.name);
+
     /**
      * Constructor
      */
 
     constructor(
-        private _mailService: MailService,
-        private _logService: LogService
+        // private _mailService: MailService,
     ) {
-        this._logService.registerClassName(AuthService.name)
     }
 
     // -----------------------------------------------------------------------------------------------------
@@ -35,8 +34,6 @@ export class AuthService {
     // Implement your own logic to validate username/password
     async validateUser(username: string, password: string): Promise<any> {
         try {
-            this._logService.debug("validateUser", { username, password });
-
             const { admin_username, superadmin_password } = { 
                 admin_username: process.env.SUPERADMIN_USERNAME, 
                 superadmin_password: process.env.SUPERADMIN_PASSWORD 
@@ -56,15 +53,15 @@ export class AuthService {
             
             throw new Error("Invalid username or password");
         } catch(error) {
-            this._logService.debug(error);
-            return null;
+            this.logger.error(error);
+            throw new Error(error);
         }
     }
 
-    // Implement your own logic to validate Azure AD user
-    async validateAzureADUser(profile: IProfile): Promise<any> {
+    // Implement your own logic to validate JWT user
+    async validateJwtUser(profile: IProfile): Promise<any> {
         try {
-            this._logService.debug("validateAzureADUser", profile);
+            this.logger.debug("validateJwtUser", profile);
 
             /**
              * TODO: Check DB for real user
@@ -72,7 +69,23 @@ export class AuthService {
 
             return profile;
         } catch (error) {
-            this._logService.debug(error);
+            this.logger.error(error);
+            return null;
+        }
+    }
+
+    // Implement your own logic to validate Azure AD user
+    async validateAzureADUser(profile: IProfile): Promise<any> {
+        try {
+            this.logger.debug("validateAzureADUser", profile);
+
+            /**
+             * TODO: Check DB for real user
+             */
+
+            return profile;
+        } catch (error) {
+            this.logger.error(error);
             return null;
         }
     }
@@ -87,7 +100,7 @@ export class AuthService {
          * - Cache request to avoid spam (use redis provider)
          */
 
-        this._mailService.sendMail(username, "Reset your password", this.resetPasswordMail)
+        // this._mailService.sendMail(username, "Reset your password", this.resetPasswordMail)
     }
 
     resetPassword(username: string, password: string): void

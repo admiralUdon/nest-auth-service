@@ -8,49 +8,62 @@
  * 
  * **/
 
-import { Injectable, ExecutionContext, CanActivate, Logger, HttpStatus } from '@nestjs/common';
+import { CanActivate, ExecutionContext, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { DefaultHttpException } from 'app/shared/custom/http-exception/default.http-exception';
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { Session } from 'express-session';
 
 @Injectable()
-export class LocalGuard extends AuthGuard('local') implements CanActivate {
+export class SessionGuard extends AuthGuard('local') implements CanActivate {
 
-    private readonly logger = new Logger(LocalGuard.name);
+    private readonly logger = new Logger(SessionGuard.name);
 
     // -----------------------------------------------------------------------------------------------------
     // @ Public methods
     // -----------------------------------------------------------------------------------------------------
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        this.logger.debug("SessionGuard canActivate() called");
         try {
-            const request = context.switchToHttp().getRequest();
-            const result = (await super.canActivate(context)) as boolean;
-            await super.logIn(request);
-            
-            return result;
+            const request = context.switchToHttp().getRequest<ExpressRequest>();
+            // Check the session request is authenticated
+            const result = request.isAuthenticated();
+            this.logger.debug(`SessionGuard canActivate result: ${result}`);
+            return result || (await super.canActivate(context)) as boolean;
         } catch (error) {     
-            this.logger.error(error);
+            this.logger.error('Error in SessionGuard canActivate:', error);
             throw error;
         }
     }
 
+    /**
+     * Explaination :-
+     * handleRequest function only triggered when super.canActivate(context)) is called.
+     * If you dont see this function is called in your debugging, it might due to result is true
+     * meaning the request is sucessfull already
+     * @param error 
+     * @param user 
+     * @param info this variable might send you wrong info if you trigger this function even thou 
+     * request.isAuthenticated() is true. Why ? because the request is already authenticated and
+     * you want this function to be called again for some reason. handleRequest should be called 
+     * for login purpose only (not for guard). 
+     * @param context 
+     * @returns 
+     */
     handleRequest<TUser = any>(error: any, user: any, info: any, context: ExecutionContext): TUser {
+        this.logger.debug("SessionGuard handleRequest() called");
         try {
-
             const response: ExpressResponse = context.switchToHttp().getResponse();
             const request: ExpressRequest & { session: Session & { user: any } } = context.switchToHttp().getRequest();
     
+            request.isAuthenticated
             /**
              * request.session.user -> after login baru ada ada value 
              * request.user -> undefined after login, will only have value after serialized
              */
-            console.log("request.session.user", request.session.user);
-            console.log("request.user", request.user);
-            console.log("user", user);
             
-            user = request.session.user ?? request.user ?? user;
+            user = request.session?.user ?? request.user ?? user;
         
             // Check if response has been sent already
             if (response.headersSent) {
@@ -84,7 +97,6 @@ export class LocalGuard extends AuthGuard('local') implements CanActivate {
             }
             
             return user;
-
         } catch (error) {
             this.logger.error(error);
             throw new DefaultHttpException(error);

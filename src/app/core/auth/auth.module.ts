@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from 'app/core/auth/auth.service';
-import { AzureStrategy } from './strategies/azure-ad.strategy';
-import { UsernamePasswordStrategy } from './strategies/local.strategy';
-import { LogServiceModule } from '../providers/log/log.module';
-import { MailServiceModule } from '../providers/mail/mail.module';
+import { AzureStrategy } from 'app/core/auth/strategies/azure-ad.strategy';
+import { JwtStrategy } from 'app/core/auth/strategies/jwt.strategy';
+import { SessionStrategy } from 'app/core/auth/strategies/session.strategy';
+import { LogServiceModule } from 'app/core/providers/log/log.module';
+import { MailServiceModule } from 'app/core/providers/mail/mail.module';
 
 @Module({
     imports: [
@@ -13,7 +14,8 @@ import { MailServiceModule } from '../providers/mail/mail.module';
     providers: [
         AuthService,
         AzureStrategy,
-        UsernamePasswordStrategy
+        SessionStrategy,
+        JwtStrategy
     ],
     exports: [
         AuthService

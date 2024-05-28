@@ -1,14 +1,19 @@
+/**
+ * 
+ * Please update this so that we can track the latest version.
+ * 
+ * Author           : Ahmad Miqdaad (ahmadmiqdaadz[at]gmail.com)
+ * Last Contributor : Ahmad Miqdaad (ahmadmiqdaadz[at]gmail.com)
+ * Last Updated     : 27 May 2024
+ * 
+ * Note: Don't edit this file unless you know exactly what you are doing.
+ * We've put a strict structure on this code. Don't change it to type "any" just to make your
+ * part of coding works.
+ * 
+**/
+
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ISO8601DateTime } from 'app/core/utils/date.util';
- 
-/**
-* TODO: Do documentation
-*
-* Note: Don't edit this file unless you know exactly what you are doing.
-* We've put a strict structure on this code. Don't change it to type "any" just to make your
-* part of coding works.
-*/
-
 
 export type DefaultHttpExceptionType = {
     statusCode?: HttpStatus;
@@ -43,11 +48,12 @@ export class DefaultHttpException extends HttpException {
         } catch(error) {            
             const { statusCode, code, message, module: moduleName } = stack;
             const module = (process.env.ENABLE_DEBUGGING !== "true") ? undefined : moduleName; 
+            
             const response = {
                 statusCode: statusCode ?? HttpStatus.INTERNAL_SERVER_ERROR,
                 code: code ?? "EE",
                 message: message ?? (JSON.stringify(stack) !== "{}" ? JSON.stringify(stack) : stack.toString()),
-                error: message === stack?.message ? ( stack?.error ?? {}) : stack,
+                error: message === stack?.message ? ( stack?.error?.message ?? stack?.error ?? {}) : stack,
                 timestamp,
                 module
             }            

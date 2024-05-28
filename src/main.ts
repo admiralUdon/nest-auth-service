@@ -8,6 +8,7 @@ import { join } from 'path';
 import { sessionConfig } from 'app/config/session.config';
 import * as session from 'express-session';
 import * as passport from 'passport';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
 
@@ -45,6 +46,13 @@ async function bootstrap() {
         app.use(passport.session());
     }
 
+    /**
+     * Set JWT + Cookie
+     * We use both JWT in response and JWT in cookie
+     */
+    if (process.env.ENABLE_JWT === "true") {
+        app.use(cookieParser());
+    }
     /**
      * Enable CORS
      */

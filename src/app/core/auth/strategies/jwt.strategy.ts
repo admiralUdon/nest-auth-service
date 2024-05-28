@@ -4,14 +4,14 @@
  * 
  * Author           : Ahmad Miqdaad (ahmadmiqdaadz[at]gmail.com)
  * Last Contributor : Ahmad Miqdaad (ahmadmiqdaadz[at]gmail.com)
- * Last Updated     : 23 May 2024
- * 
- * **/
+ * Last Updated     : 25 May 2024
+ */
 
 import { Injectable, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { AuthService } from 'app/core/auth/auth.service';
-import { Strategy } from 'passport-jwt';
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import { ExtractJwt, Strategy } from 'passport-jwt';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -21,33 +21,38 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     /**
      * Constructor
      */
-
     constructor(
-        private _authService: AuthService,
+        private readonly _authService: AuthService,
     ) {
-        super();
+        super({
+            jwtFromRequest: ExtractJwt.fromExtractors([
+                ExtractJwt.fromAuthHeaderAsBearerToken(),
+                (request) => {
+                    return (request && request.cookies) ? request.cookies['accessToken'] : null;
+                },
+            ]),
+            ignoreExpiration: true,
+            secretOrKey: process.env.JWT_SECRET,
+            passReqToCallback: true
+        });
     }
 
     // -----------------------------------------------------------------------------------------------------
     // @ Public methods
     // -----------------------------------------------------------------------------------------------------
 
-    async validate(username: string, password: string, done: (error: any, user?: Express.User | false, options?: any) => void ): Promise<void> {
+    async validate(request: ExpressRequest, payload, done: (error: any, user?: any, info?: any) => void): Promise<void> {
         try {
-            this.logger.debug("Username & Password", { username, password });
-            const validateUser = await this._authService.validateUser(username, password);
-            this.logger.debug("Validate User", validateUser);
-
-            if (!validateUser) {
-                throw new Error("Invalid username or password");
+            const { username } = payload;            
+            const validatedUser = await this._authService.validateJwtUser(username);
+            if (!validatedUser) {
+                return done(null, false, { message: 'Invalid token' });
             }
-
-            const { password: userPassword, ...user } = validateUser;
-
+            const user = { username };
             return done(null, user);
         } catch (error) {
-            this.logger.error(error);
-            return done(error, null, { message: error.message });
+            this.logger.error('Error validating user', error);
+            return done(error, false, { message: error.message });
         }
     }
 }

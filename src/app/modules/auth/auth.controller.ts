@@ -1,15 +1,15 @@
-import { Body, Controller, HttpStatus, Post, Request, Response, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, Request, Response } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AuthService } from 'app/core/auth/auth.service';
+import { ConditionalGuard } from 'app/core/decorators/conditional-guard.decorator';
+import { JwtService } from 'app/core/providers/jwt/jwt.service';
 import { LogService } from 'app/core/providers/log/log.service';
 import { AppCode } from 'app/core/types/app.type';
+import { ForgotPasswordBody, ResetPasswordBody, SignInBody, SignInUsingTokenBody, SignOutBody, SignUpBody } from 'app/modules/auth/auth.dto';
 import { DefaultHttpException } from 'app/shared/custom/http-exception/default.http-exception';
 import { DefaultHttpResponse } from 'app/shared/custom/http-response/default.http-response';
-import { ForgotPasswordBody, ResetPasswordBody, SignInBody, SignInUsingTokenBody, SignOutBody, SignUpBody } from 'app/modules/auth/auth.dto';
 import { plainToClass } from 'class-transformer';
 import { validate } from 'class-validator';
-import { LocalGuard } from 'app/core/auth/guards/local.guard';
-import { AuthService } from 'app/core/auth/auth.service';
-import { JwtService } from 'app/core/providers/jwt/jwt.service';
 
 @ApiTags("Auth")
 @Controller()
@@ -105,10 +105,17 @@ export class AuthController {
                 })
             }
 
-            const { password } = bodyObject;
-            const { accessToken } = request.headers;
-            const user = await this._jwtService.verifyJwtToken<{username: string}>(accessToken, process.env.JWT_ACCESSTOKEN);
-            this._authService.resetPassword(user.username, password);
+            const { password, token } = bodyObject;
+
+            /**
+             * TODO:
+             * - check token with redis to ensure correct username
+             * - query user with the username
+             */
+
+            const username = "user@example.com";
+
+            this._authService.resetPassword(username, password);
             
             const successCode = AppCode.OK;
             const result = new DefaultHttpResponse({
@@ -116,7 +123,7 @@ export class AuthController {
                 message: successCode.description,
                 statusCode: successCode.status,
                 data: {
-                    message: `Password for user ${user.username} has been successfully reset. You can now log in with your new password. If you encounter any issues, please contact our support team.`
+                    message: `Password for user ${username} has been successfully reset. You can now log in with your new password. If you encounter any issues, please contact our support team.`
                 }
             });
             
@@ -129,7 +136,7 @@ export class AuthController {
     }
 
     @Post("sign-in")
-    @UseGuards(LocalGuard)
+    @ConditionalGuard("login")
     @ApiOperation({ 
         summary: "Sign In", 
         description: "Authenticate a user using their email and password." 
@@ -153,14 +160,18 @@ export class AuthController {
                     module: AuthController.name,
                     code: "INVALID_REQUEST",
                     // additionalMessage: errors
-                })
+                });
             }
-            
+
+            const { accessToken } = request.user;
+            const data = { accessToken };
+
             const successCode = AppCode.OK;
             const result = new DefaultHttpResponse({
                 code: successCode.code,
                 message: successCode.description,
-                statusCode: successCode.status, 
+                statusCode: successCode.status,
+                data
             });
             
             response.status(result.statusCode);
@@ -172,7 +183,7 @@ export class AuthController {
     }
 
     @Post("sign-in-with-token")
-    @UseGuards(LocalGuard)
+    // @UseGuards(LocalGuard)
     @ApiOperation({ 
         summary: "Sign In with Token", 
         description: "Renew the login token and provide a new accessToken with a new expiry." 
