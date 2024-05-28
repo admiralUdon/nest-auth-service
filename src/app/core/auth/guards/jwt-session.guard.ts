@@ -38,7 +38,23 @@ export class JwtSessionGuard extends AuthGuard('local') implements CanActivate {
                                 (sessionResult && jwtResult ):
                                 (sessionResult || jwtResult);
             this.logger.debug(`JwtSessionGuard canActivate result: ${result}`);
-                                
+
+            // Re-login if session missing but JWT exits. From systems perpective,
+            // the user were already logged out, but since jwt is still valid and
+            // we'll continue to allow the user to access the resources. Might wanna
+            // to re-think about this
+            if (process.env.STRICT_AUTHENTICATION !== "true" && jwtResult && request.isUnauthenticated) {                
+                const accessToken = request.headers.authorization?.split("Bearer ")[1] || request.cookies?.accessToken; 
+                const jwtUser = accessToken ? (()=>{
+                    const secret = process.env.JWT_SECRET;
+                    const user = this.jwtService.verify(accessToken, { secret });
+                    return user;
+                })() : null;
+                if (jwtUser) {
+                    request.user = jwtUser;
+                }
+            }
+
             return result || (await super.canActivate(context)) as boolean;
         } catch (error) {     
             this.logger.error('Error in SessionGuard canActivate:', error);
@@ -63,6 +79,7 @@ export class JwtSessionGuard extends AuthGuard('local') implements CanActivate {
     handleRequest<TUser = any>(error: any, user: any, info: any, context: ExecutionContext): TUser {
         this.logger.debug("JwtSessionGuard handleRequest() called");
         try {
+            
             const response: ExpressResponse = context.switchToHttp().getResponse();
             const request: ExpressRequest & { session: Session & { user: any } } = context.switchToHttp().getRequest();
 
@@ -70,6 +87,7 @@ export class JwtSessionGuard extends AuthGuard('local') implements CanActivate {
              * request.session.user -> after login baru ada ada value 
              * request.user -> undefined after login, will only have value after serialized
              */
+
             const accessToken = request.headers.authorization?.split("Bearer ")[1] || request.cookies?.accessToken;
             const jwtUser = accessToken ? (()=>{
                 const secret = process.env.JWT_SECRET;

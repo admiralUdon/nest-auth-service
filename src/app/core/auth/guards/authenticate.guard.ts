@@ -41,7 +41,7 @@ export class AuthenticateGuard extends AuthGuard('local') implements CanActivate
             const { username, password } = request.body;
             const validatedUser = await this.authService.validateUser(username, password);
             if (!validatedUser) {
-                console.error("Not authorized");
+                this.logger.error("Not authorized");
             }
             // Create a user object
             const user = { username };
@@ -72,7 +72,6 @@ export class AuthenticateGuard extends AuthGuard('local') implements CanActivate
                 const secret = process.env.JWT_SECRET;
                 const accessToken = this.jwtService.sign(user, {secret});                
                 request.session.user = { ...user, accessToken};
-                console.log("request.session.user", request.session.user);
             }
             // Check if STRICT_AUTHENTICATION were set to true and strict authentication 
             // condition were NOT meet. If it were, (well i havent finish having thought
