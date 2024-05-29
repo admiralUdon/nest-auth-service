@@ -18,6 +18,7 @@ export function ConditionalGuard(action?: 'login') {
     }
 
     if (action === "login") {
+        console.log("AuthenticateGuard Applied");
         return UseGuards(AuthenticateGuard);
     }
 

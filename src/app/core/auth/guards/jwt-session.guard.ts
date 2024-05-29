@@ -19,7 +19,9 @@ import { Session } from 'express-session';
 export class JwtSessionGuard extends AuthGuard('local') implements CanActivate {
 
     private readonly logger = new Logger(JwtSessionGuard.name);
-    private readonly jwtService = new JwtService();
+    private readonly jwtService = new JwtService({
+        signOptions: { expiresIn: process.env.JWT_EXPIRES_IN }
+    });
 
     // -----------------------------------------------------------------------------------------------------
     // @ Public methods
@@ -132,7 +134,11 @@ export class JwtSessionGuard extends AuthGuard('local') implements CanActivate {
 
         } catch (error) {
             this.logger.error(error);
-            throw new DefaultHttpException(error);
+            throw new DefaultHttpException({
+                statusCode: HttpStatus.UNAUTHORIZED,
+                message: "User not authorized",
+                error
+            });
         }
     }
 }

@@ -99,7 +99,11 @@ export class SessionGuard extends AuthGuard('local') implements CanActivate {
             return user;
         } catch (error) {
             this.logger.error(error);
-            throw new DefaultHttpException(error);
+            throw new DefaultHttpException({
+                statusCode: HttpStatus.UNAUTHORIZED,
+                message: "User not authorized",
+                error
+            });
         }
     }
 }

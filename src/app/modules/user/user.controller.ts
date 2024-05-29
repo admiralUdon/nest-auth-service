@@ -34,7 +34,8 @@ export class UserController {
     ) {
         try {
 
-            const {iat, accessToken, ...user} = request.user ?? {};
+            const { username } = request.user ?? {};
+            const user = { username };
         
             const successCode = AppCode.OK;
             const result = new DefaultHttpResponse({

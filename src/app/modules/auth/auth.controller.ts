@@ -183,7 +183,7 @@ export class AuthController {
     }
 
     @Post("sign-in-with-token")
-    // @UseGuards(LocalGuard)
+    @ConditionalGuard("login")
     @ApiOperation({ 
         summary: "Sign In with Token", 
         description: "Renew the login token and provide a new accessToken with a new expiry." 
@@ -209,12 +209,16 @@ export class AuthController {
                     // additionalMessage: errors
                 })
             }
+
+            const { accessToken } = request.user;
+            const data = { accessToken };
             
             const successCode = AppCode.OK;
             const result = new DefaultHttpResponse({
                 code: successCode.code,
                 message: successCode.description,
                 statusCode: successCode.status,
+                data
             });
             
             response.status(result.statusCode);

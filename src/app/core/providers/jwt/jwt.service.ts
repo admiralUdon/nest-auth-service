@@ -15,6 +15,8 @@ import { JwtService as NestJwtService } from '@nestjs/jwt';
 export class JwtService {
 
     private readonly logger = new Logger(JwtService.name);
+    private readonly expiresIn = process.env.JWT_EXPIRES_IN;
+    private readonly notBefore = process.env.JWT_EXPIRES_IN;
 
     /**
      * Constructor
@@ -30,7 +32,11 @@ export class JwtService {
     // -----------------------------------------------------------------------------------------------------
 
     generateJwtToken(payload: any, secret: string): string {
-        return this._nestJwtService.sign(payload, { secret });
+        const { expiresIn, notBefore } = {
+            expiresIn: this.expiresIn,
+            notBefore: this.notBefore
+        };
+        return this._nestJwtService.sign(payload, { secret, expiresIn, notBefore });
     }
 
     verifyJwtToken<T>(token: string, secret: string): Promise<T> {

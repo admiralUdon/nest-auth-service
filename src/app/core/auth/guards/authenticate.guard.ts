@@ -14,7 +14,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { DefaultHttpException } from 'app/shared/custom/http-exception/default.http-exception';
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { Session } from 'express-session';
-import { AuthService } from '../auth.service';
+import { AuthService } from 'app/core/auth/auth.service';
 
 /**
  * This AuthenticateGuard is mainly used for login. For conditional guard, check 
@@ -26,7 +26,9 @@ import { AuthService } from '../auth.service';
 export class AuthenticateGuard extends AuthGuard('local') implements CanActivate {
 
     private readonly logger = new Logger(AuthenticateGuard.name);
-    private readonly jwtService = new JwtService();
+    private readonly jwtService = new JwtService({
+        signOptions: { expiresIn: process.env.JWT_EXPIRES_IN }
+    });
     private readonly authService = new AuthService();
 
     // -----------------------------------------------------------------------------------------------------
@@ -37,14 +39,28 @@ export class AuthenticateGuard extends AuthGuard('local') implements CanActivate
         try {
             const request: ExpressRequest & { session: Session & { user: any } } = context.switchToHttp().getRequest();
             const response: ExpressResponse = context.switchToHttp().getResponse();
-            // Extract username & password from request body
-            const { username, password } = request.body;
-            const validatedUser = await this.authService.validateUser(username, password);
+            // Extract username & password / expiredAccessToken from request body
+            const { username, password, accessToken: expiredAccessToken } = request.body;
+            
+            // Validate username & password OR expiredAccessToken
+            const validatedUser = ((username && password) || expiredAccessToken) ? await (async () => {                
+                if (username && password) 
+                    return await this.authService.validateUser(username, password);
+                if (expiredAccessToken) {
+                    const secret = process.env.JWT_SECRET;
+                    const user = this.jwtService.verify(expiredAccessToken, { secret });                    
+                    return await this.authService.validateJwtUser(user);
+                }
+                return null;
+            })() : null;
+            // If null throw error
             if (!validatedUser) {
                 this.logger.error("Not authorized");
+                throw new Error("User not authorized")
             }
+
             // Create a user object
-            const user = { username };
+            const user = { username: validatedUser.username };
             // Decide whether to serialize user into session
             const authenticateSession = (process.env.ENABLE_SESSION === "true") ? (async () => {
                 const request = context.switchToHttp().getRequest();
@@ -54,8 +70,12 @@ export class AuthenticateGuard extends AuthGuard('local') implements CanActivate
             })() : false;
             // Decide whether to create jwt token and put it in cookie
             const accessToken = (process.env.ENABLE_JWT === "true") ? (() => {
-                const secret = process.env.JWT_SECRET;
-                const accessToken = this.jwtService.sign(user, {secret});
+                const { secret, expiresIn, notBefore } = {
+                    secret: process.env.JWT_SECRET,
+                    expiresIn: process.env.JWT_EXPIRES_IN,
+                    notBefore: process.env.JWT_NOT_BEFORE
+                };
+                const accessToken = this.jwtService.sign(user, {secret, expiresIn, notBefore });
                 response.cookie('accessToken', accessToken, { httpOnly: true });
                 // Set accessToken into request.user so that in controller, we can use the 
                 // accessToken and put it in response body
@@ -69,8 +89,12 @@ export class AuthenticateGuard extends AuthGuard('local') implements CanActivate
             // Check if STRICT_AUTHENTICATION were set to true and strict authentication 
             // condition were meet. If it were, set user and accessToken into session
             if (isStrictAuth && isStrictAuthCondMeet) {
-                const secret = process.env.JWT_SECRET;
-                const accessToken = this.jwtService.sign(user, {secret});                
+                const { secret, expiresIn, notBefore } = {
+                    secret: process.env.JWT_SECRET,
+                    expiresIn: process.env.JWT_EXPIRES_IN,
+                    notBefore: process.env.JWT_NOT_BEFORE
+                };
+                const accessToken = this.jwtService.sign(user, {secret, expiresIn, notBefore});                
                 request.session.user = { ...user, accessToken};
             }
             // Check if STRICT_AUTHENTICATION were set to true and strict authentication 
@@ -86,7 +110,7 @@ export class AuthenticateGuard extends AuthGuard('local') implements CanActivate
             this.logger.error(error);
             throw new DefaultHttpException({
                 statusCode: HttpStatus.UNAUTHORIZED,
-                message: "Unauthorized access",
+                message: "User not authorized",
                 error
             });
         }

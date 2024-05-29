@@ -30,10 +30,10 @@ export class SignInBody {
 }
 
 export class SignInUsingTokenBody {
-    @ApiProperty({example: "", required: true})
+    @ApiProperty({example: "eyJhbGciOiJIUzI1NiIs...OYVpa7idDakZlqZO7N0", required: true})
     @IsNotEmpty()
     @IsJWT()
-    token: string;
+    accessToken: string;
 }
 
 export class SignOutBody {
