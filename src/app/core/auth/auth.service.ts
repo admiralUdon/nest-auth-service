@@ -12,18 +12,20 @@ import { Injectable, Logger } from '@nestjs/common';
 import { IProfile } from 'passport-azure-ad';
 import { MailService } from 'app/core/providers/mail/mail.service';
 import { readHTMLFile } from 'app/core/utils/html-reader.util';
+import { PrismaService } from 'app/core/providers/prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
 
     private readonly logger = new Logger(AuthService.name);
+    private readonly mailService = new MailService();
+    private readonly prismaService = new PrismaService();
 
     /**
      * Constructor
      */
 
     constructor(
-        // private _mailService: MailService,
     ) {
     }
 
@@ -50,8 +52,16 @@ export class AuthService {
             /**
              * TODO: Check DB for real user
              */
+            const user = await this.prismaService.user.findUnique({ where: { username }});
+            if (!user) {
+                throw new Error("User does not exists");
+            }
+
+            if (user.password !== password) {
+                throw new Error("Invalid username or password");
+            }
             
-            throw new Error("Invalid username or password");
+            return user;
         } catch(error) {
             this.logger.error(error);
             throw new Error(error);
@@ -96,14 +106,23 @@ export class AuthService {
         /**
          * TODO: 
          * - Check DB for real user
-         * - Make a placeholder injection
          * - Cache request to avoid spam (use redis provider)
          */
 
-        // this._mailService.sendMail(username, "Reset your password", this.resetPasswordMail)
+        const user = { name: "User", username };
+        const token = "abc12345";
+
+        const passwordResetLink = `https://www.teras.dev/reset-password?token=${token}`;
+        const supportLink = `https://www.teras.dev/support`;
+        const mail = this.resetPasswordMail
+                        .replace("__NAME__", user.name)
+                        .replace("__PASSWORD_RESET_LINK__", passwordResetLink)
+                        .replace("__SUPPORT_LINK__", supportLink);
+
+        this.mailService.sendMail(username, "Reset your password", mail);
     }
 
-    resetPassword(username: string, password: string): void
+    resetPassword(token: string, password: string): void
     {
         /**
          * TODO: Check DB for real user

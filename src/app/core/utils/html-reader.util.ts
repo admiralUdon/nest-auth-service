@@ -3,7 +3,7 @@ import { join } from 'path';
 
 export function readHTMLFile(fileName) {
     try {        
-        const filePath = join(__dirname, '..', '..', '..', 'assets', 'templates', fileName);
+        const filePath = join(__dirname, '..', '..', '..', '..', 'assets', 'templates', fileName);
         const htmlContent = readFileSync(filePath, 'utf-8');
         return htmlContent;
     } catch (err) {

@@ -5,6 +5,7 @@ import { JwtStrategy } from 'app/core/auth/strategies/jwt.strategy';
 import { SessionStrategy } from 'app/core/auth/strategies/session.strategy';
 import { LogServiceModule } from 'app/core/providers/log/log.module';
 import { MailServiceModule } from 'app/core/providers/mail/mail.module';
+import { PrismaService } from 'app/core/providers/prisma/prisma.service';
 
 @Module({
     imports: [
@@ -12,6 +13,7 @@ import { MailServiceModule } from 'app/core/providers/mail/mail.module';
         LogServiceModule,
     ],
     providers: [
+        PrismaService,
         AuthService,
         AzureStrategy,
         SessionStrategy,

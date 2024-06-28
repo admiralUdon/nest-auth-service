@@ -40,9 +40,7 @@ export class MailService {
             subject,
             html,
         };
-
-        this.logger.debug("mailOptions", mailOptions);
-        
+        // this.logger.debug("mailOptions", mailOptions);
         await this.transporter.sendMail(mailOptions);
     }
 
@@ -53,6 +51,8 @@ export class MailService {
     private async initialiseTransport() {
         try {
             this.transporterOptions = transportConfig();
+            console.log("this.transporterOptions", this.transporterOptions);
+            
             this.transporter = createTransport(this.transporterOptions);
             this.logger.debug(`SMTP connection transport successfully initialized`);
         } catch (error) {

@@ -113,9 +113,9 @@ export class AuthController {
              * - query user with the username
              */
 
-            const username = "user@example.com";
+            const username = "john.doe@example.com";
 
-            this._authService.resetPassword(username, password);
+            this._authService.resetPassword(token, password);
             
             const successCode = AppCode.OK;
             const result = new DefaultHttpResponse({

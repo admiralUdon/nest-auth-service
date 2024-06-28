@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsJWT, IsNotEmpty, IsString } from "class-validator";
 
 export class ForgotPasswordBody {
-    @ApiProperty({example: "admin@example.com", required: true})
+    @ApiProperty({example: "john.doe@example.com", required: true})
     @IsNotEmpty()
     @IsString()
     username: string;
@@ -19,7 +19,7 @@ export class ResetPasswordBody {
 }
 
 export class SignInBody {
-    @ApiProperty({example: "admin", required: true})
+    @ApiProperty({example: "john.doe@example.com", required: true})
     @IsNotEmpty()
     @IsString()
     username: string;
@@ -44,12 +44,12 @@ export class SignOutBody {
 }
 
 export class SignUpBody {
-    @ApiProperty({example: "admin", required: true})
+    @ApiProperty({example: "john.doe@example.com", required: true})
     @IsNotEmpty()
     @IsString()
     username: string;
   
-    @ApiProperty({example: "name", required: true})
+    @ApiProperty({example: "John Doe", required: true})
     @IsNotEmpty()
     name: string;
   
