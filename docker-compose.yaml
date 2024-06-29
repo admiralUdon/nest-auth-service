@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  nest-auth-service:
+    container_name: nest-auth-service
+    image: admiraludon/nest-auth-service:${APP_VERSION}
+    ports:
+      - 3000:3000
+    restart: always
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    volumes:
+      - type: bind
+        source: ./data/.env
+        target: /app/.env
+    platform: "linux/amd64"
+    # env_file:
+    #   - ./data/.env

@@ -61,7 +61,7 @@ export class AuthenticateGuard extends AuthGuard('local') implements CanActivate
 
             // Decide whether to serialize user into session
             const authenticateSession = (process.env.ENABLE_SESSION === "true") ? await (async () => {
-                if (process.env.ENABLE_JWT === "true") {
+                if (process.env.ENABLE_JWT === "true" && expiredAccessToken) {
                     return await super.logIn(request);
                 } else {
                     const result = (await super.canActivate(context)) as boolean;

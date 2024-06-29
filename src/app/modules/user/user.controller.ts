@@ -166,7 +166,7 @@ export class UserController {
             const user = await this._userService.user({ username: reqUsername });
 
             // Check if the session user is an admin
-            const isAdminUser = sessionUser?.roles.some(userRole => userRole.role.tag === "admin") ?? false
+            const isAdminUser = sessionUser?.roles?.some(userRole => userRole.role.tag === "admin") ?? false
             
             // If user request for other username and not an admin, throw forbidden error
             if (!isSameUsername && !isAdminUser) {
