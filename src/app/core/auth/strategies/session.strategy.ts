@@ -39,11 +39,10 @@ export class SessionStrategy extends PassportStrategy(Strategy, 'local') {
     async validate(request, username: string, password: string, done: (error: any, user?: Express.User | false, options?: IVerifyOptions) => void ): Promise<void> {
         try {
             const { accessToken } = request.user ?? {};               
-            const validatedUser = await this._authService.validateUser(username, password);
-            if (!validatedUser) {
+            const user = await this._authService.validateUser(username, password);
+            if (!user) {
                 throw new Error("Invalid username or password");
             }
-            const user = { username };
             return done(null, {accessToken, ...user});
         } catch (error) {
             this.logger.error(error);

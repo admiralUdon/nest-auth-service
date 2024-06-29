@@ -154,19 +154,19 @@ export class UserController {
             }
 
             // Get username from request 
-            const { username: reqUsername } = paramObject;
+            const { username: reqUsername } = paramObject;            
         
             // Get username from current JWT token
-            const { username: sessionUsername } = request.user;
+            const sessionUser = request.user;
 
             // Check if requested username is same as session username
-            const isSameUsername = sessionUsername === reqUsername;
+            const isSameUsername = sessionUser.username === reqUsername;
             
             // Get user from the database
             const user = await this._userService.user({ username: reqUsername });
 
             // Check if the session user is an admin
-            const isAdminUser = await this._userService.checkUserRole(sessionUsername, "admin");
+            const isAdminUser = sessionUser?.roles.some(userRole => userRole.role.tag === "admin") ?? false
             
             // If user request for other username and not an admin, throw forbidden error
             if (!isSameUsername && !isAdminUser) {

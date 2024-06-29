@@ -46,22 +46,56 @@ export class AuthService {
                 username === admin_username && 
                 password === superadmin_password
             ) {
-                return { username, password };
+                return { 
+                    username, 
+                    password, 
+                    roles: [
+                        { role: { tag: "superadmin", "title": "Super Admin" } },
+                        { role: { tag: "admin", "title": "Admin" } },
+                        { role: { tag: "user", "title": "User" } },
+                    ] 
+                };
             }
 
-            /**
-             * TODO: Check DB for real user
-             */
-            const user = await this.prismaService.user.findUnique({ where: { username }});
-            if (!user) {
+            // -----------------------------------------------------------------------------------------------------
+            // @@ You can change this to fit your requirement
+            // -----------------------------------------------------------------------------------------------------
+
+            const findUser = await this.prismaService.user.findUnique({ 
+                where: { username },
+                include: {
+                    roles: {
+                        include: {
+                            role: true
+                        }
+                    }
+                }
+            });
+            if (!findUser) {
                 throw new Error("User does not exists");
             }
 
-            if (user.password !== password) {
+            if (findUser.password !== password) {
                 throw new Error("Invalid username or password");
             }
+
+            const user = (() => {
+                const { password, roles: userRoles, ...userData} = findUser;
+                const roles = userRoles.map(userRole => {
+                    const { id, role } = userRole;
+                    const { tag, title } = role;
+                    return {id, role: { tag, title }};
+                }) ?? [];
+                const user = {...userData, roles};
+                return user;
+            })();
             
             return user;
+
+            // -----------------------------------------------------------------------------------------------------
+            // @@ End
+            // -----------------------------------------------------------------------------------------------------
+
         } catch(error) {
             this.logger.error(error);
             throw new Error(error);

@@ -104,7 +104,7 @@ export class JwtGuard extends AuthGuard('jwt') implements CanActivate {
             return user;
 
         } catch (error) {
-            this.logger.error(error);
+            this.logger.error('Error in JWTGuard canActivate:', error);
             throw new DefaultHttpException({
                 statusCode: HttpStatus.UNAUTHORIZED,
                 message: "User not authorized",

@@ -59,8 +59,12 @@ export class JwtSessionGuard extends AuthGuard('local') implements CanActivate {
 
             return result || (await super.canActivate(context)) as boolean;
         } catch (error) {     
-            this.logger.error('Error in SessionGuard canActivate:', error);
-            throw error;
+            this.logger.error('Error in JWTSessionGuard canActivate:', error);
+            throw new DefaultHttpException({
+                statusCode: HttpStatus.UNAUTHORIZED,
+                message: "User not authorized",
+                error
+            });
         }
     }
 

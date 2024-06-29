@@ -36,14 +36,14 @@ export class AuthenticateGuard extends AuthGuard('local') implements CanActivate
     // -----------------------------------------------------------------------------------------------------
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        try {
+        try {            
             const request: ExpressRequest & { session: Session & { user: any } } = context.switchToHttp().getRequest();
             const response: ExpressResponse = context.switchToHttp().getResponse();
             // Extract username & password / expiredAccessToken from request body
             const { username, password, accessToken: expiredAccessToken } = request.body;
             
             // Validate username & password OR expiredAccessToken
-            const validatedUser = ((username && password) || expiredAccessToken) ? await (async () => {                
+            const user = ((username && password) || expiredAccessToken) ? await (async () => {                
                 if (username && password) 
                     return await this.authService.validateUser(username, password);
                 if (expiredAccessToken) {
@@ -54,20 +54,22 @@ export class AuthenticateGuard extends AuthGuard('local') implements CanActivate
                 return null;
             })() : null;
             // If null throw error
-            if (!validatedUser) {
+            if (!user) {
                 this.logger.error("Not authorized");
                 throw new Error("User not authorized")
             }
 
-            // Create a user object
-            const user = { username: validatedUser.username };
             // Decide whether to serialize user into session
-            const authenticateSession = (process.env.ENABLE_SESSION === "true") ? (async () => {
-                const request = context.switchToHttp().getRequest();
-                const result = (await super.canActivate(context)) as boolean;
-                await super.logIn(request);
-                return result;
+            const authenticateSession = (process.env.ENABLE_SESSION === "true") ? await (async () => {
+                if (process.env.ENABLE_JWT === "true") {
+                    return await super.logIn(request);
+                } else {
+                    const result = (await super.canActivate(context)) as boolean;
+                    await super.logIn(request);
+                    return result;
+                }
             })() : false;
+            
             // Decide whether to create jwt token and put it in cookie
             const accessToken = (process.env.ENABLE_JWT === "true") ? (() => {
                 const { secret, expiresIn, notBefore } = {
@@ -75,13 +77,15 @@ export class AuthenticateGuard extends AuthGuard('local') implements CanActivate
                     expiresIn: process.env.JWT_EXPIRES_IN,
                     notBefore: process.env.JWT_NOT_BEFORE
                 };
-                const accessToken = this.jwtService.sign(user, {secret, expiresIn, notBefore });
-                response.cookie('accessToken', accessToken, { httpOnly: true });
+                const { exp, nbf, iat, ...userPayload} = user;                
+                const accessToken = this.jwtService.sign(userPayload, {secret, expiresIn, notBefore });
+                response.cookie('AuthenticateGuard accessToken', accessToken, { httpOnly: true });
                 // Set accessToken into request.user so that in controller, we can use the 
                 // accessToken and put it in response body
-                request.user = { ...user, accessToken} ;
+                request.user = { ...userPayload, accessToken} ;
                 return accessToken;
             })() : false;
+
             // Check if STRICT_AUTHENTICATION were set to true in .env
             const isStrictAuth = process.env.STRICT_AUTHENTICATION === "true" ?? false;
             // Check if strict authentication condition were meet
@@ -104,10 +108,10 @@ export class AuthenticateGuard extends AuthGuard('local') implements CanActivate
              * TODO: Do code here
              */
 
-            const result = authenticateSession || !!accessToken;
+            const result = authenticateSession || !!accessToken;            
             return result;
         } catch (error) {     
-            this.logger.error(error);
+            this.logger.error('Error in AuthenticateGuard canActivate :', error);
             throw new DefaultHttpException({
                 statusCode: HttpStatus.UNAUTHORIZED,
                 message: "User not authorized",
